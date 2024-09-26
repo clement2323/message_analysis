@@ -10,9 +10,10 @@ def read_pst(file_path):
     pst_file.open(file_path)
 
     root_folder = pst_file.get_root_folder()
-    process_folder(root_folder)
+    n_message, liste_message = process_folder(root_folder)
 
     pst_file.close()
+    return n_message, liste_message
 
 
 def process_folder(folder, liste_message_structure=None, message_count=0, total_messages=None):
@@ -21,10 +22,7 @@ def process_folder(folder, liste_message_structure=None, message_count=0, total_
     
     if total_messages is None:
         total_messages = count_messages(folder)
-        pbar = tqdm(total=total_messages, desc="Processing messages")
-    else:
-        pbar = None
-
+    
     for sub_folder in folder.sub_folders:
         message_count, liste_message_structure = process_folder(sub_folder, liste_message_structure, message_count, total_messages)
     
@@ -35,12 +33,6 @@ def process_folder(folder, liste_message_structure=None, message_count=0, total_
         
         liste_message_structure.append(extract_message_info(message))
         
-        if pbar:
-            pbar.update(1)
-    
-    if pbar:
-        pbar.close()
-    
     return message_count, liste_message_structure
 
 def count_messages(folder):
@@ -119,7 +111,7 @@ def extract_message_info(message, parent_id=None):
         "previous_messages": previous_messages
     }
     
-    pprint(objet, width=80, sort_dicts=False)
+    #pprint(objet, width=80, sort_dicts=False)
 
     return objet
 
@@ -159,18 +151,31 @@ file_path = "backup.pst"
 pst_file = pypff.file()
 pst_file.open(file_path)
 root_folder = pst_file.get_root_folder()
-process_folder(root_folder)
+n, liste_messages = process_folder(root_folder)
 
+
+import json
+
+# Créer un objet JSON
+json_object = {
+    "messages": liste_messages
+}
+
+# Sauvegarder l'objet JSON dans un fichier
+with open("messages.json", "w", encoding="utf-8") as json_file:
+    json.dump(json_object, json_file, ensure_ascii=False, indent=2)
+
+print("Les messages ont été sauvegardés dans 'messages.json'")
 
 # Idées :
-- dico structuré, save en §JSON pour lecture sur R après
-- nombre de mail par jour
-- tableau de bord des heures du nombre envois de mail par personne
-- graph entre les individus qui répondent etc..et se renvoit
-- nombre de mots par mail, nombre de mots uniques utilisés etc..
-- liens pondérés par nb mails envoyés, couleurs des noeuds dépendant de la div
-- faire des records
-- mail le plus long
+# - dico structuré, save en §JSON pour lecture sur R après
+# - nombre de mail par jour
+# - tableau de bord des heures du nombre envois de mail par personne
+# - graph entre les individus qui répondent etc..et se renvoit
+# - nombre de mots par mail, nombre de mots uniques utilisés etc..
+# - liens pondérés par nb mails envoyés, couleurs des noeuds dépendant de la div
+# - faire des records
+# - mail le plus long
  #C:/Users/RK09OA/AppData/Local/Programs/Python/Python312/python.exe , pour lancer python sur terminal
 
 
