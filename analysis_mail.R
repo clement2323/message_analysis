@@ -1,107 +1,57 @@
-Sys.setenv(no_proxy = "")
-Sys.setenv(https_proxy ="http://proxy-rie.http.insee.fr:8080")
-Sys.setenv(http_proxy ="http://proxy-rie.http.insee.fr:8080")
-
-rm(list=ls())
-
-packages <- c("jsonlite", "dplyr", "lubridate", "stringr", "tidyr", "ggplot2", "ggiraph","gganimate")
-sapply(packages, require, character.only = TRUE)
-
+source("codes/setup.R")
 source("codes/fonctions.R")
+source("codes/preparation_donnees.R")
 
-# Lire le fichier JSON
-data <- fromJSON("input/messages.json")
-message_table <- data$messages
-
-indicatrice_previous_message <- sapply(message_table$previous_messages,function(message){
-    return((message|> nrow() )>0 )
-} )
-message_table$date <- sapply(message_table$date,parse_custom_date)
-
-message_table <- message_table %>%
-  separate(date, into = c("annee", "mois", "jour", "heure", "minute", "seconde"), sep = "-", remove = FALSE)
-
-# Extraire prénom et nom
-message_table <- message_table %>%
-  mutate(
-    full_name = str_extract(sender, "^[^@]+"),
-    full_name = str_replace_all(full_name, "\\.", " "),
-    full_name = str_to_title(full_name)
-  )
-
+# n_mail par sender
 interactive_plot <- create_nb_mail_plot(message_table,5,20)
-# Sauvegarder le graphique interactif en HTML
 htmlwidgets::saveWidget(interactive_plot, "output/top_senders_interactive.html",selfcontained=FALSE)
 
-## heure repartition
-# Assurez-vous que la colonne 'heure' est de type numérique
-message_table$heure <- as.numeric(message_table$heure)
-
-# Créer un dataframe résumé pour l'histogramme
-mail_count <- message_table %>%
-  count(heure)
-# compte par personne 
-interactive_plot <- create_plot(message_table,6)
-saveWidget(interactive_plot, "repartition_mails_par_heure_interactif.html")
-
-# créer heure par heure avec le decoupage que j'avais fait déja bar plot ggiraph aussi 6 derniers mois fonction
-
+# n_mail ar heure
 hourly_plot <- create_hourly_plot_last_6_months(message_table,12)
-
-# ... existing code ...
-
-# Créer l'animation des top expéditeurs
-create_top_senders_animation <- function(data, top_n = 15, months_back = 6) {
-  #data <-message_table
-  # Assurez-vous que la colonne 'date' est au format Date
-  data$date <- as.Date(data$date)
-  
-  # Filtrer les données pour les derniers mois
-  end_date <- max(data$date,na.rm = TRUE)
-  start_date <- end_date - months(months_back)
-  filtered_data <- data %>% 
-    filter(date >= start_date)
-  
-  # Préparer les données pour l'animation
-  animation_data <- filtered_data %>%
-    count(full_name, annee, mois) %>%
-    arrange(full_name, annee, mois) %>%
-    group_by(full_name) %>%
-    mutate(
-      cumulative_n = cumsum(n),
-      date = as.Date(paste(annee, sprintf("%02d", as.numeric(mois)), "01", sep = "-"))
-    ) %>%
-    group_by(annee, mois) %>%
-    mutate(ranking = row_number(-cumulative_n)) %>%
-    filter(ranking <= top_n) %>%
-    ungroup()
-
-  # Créer l'animation
-  p <- ggplot(animation_data, aes(x = ranking, y = cumulative_n, group = full_name, fill = full_name)) +
-    geom_col() +
-    geom_text(aes(label = full_name), hjust = 1.1, color = "white") +
-    #geom_text(aes(label = cumulative_n), hjust = -0.1) +
-    coord_flip(clip = "off", expand = FALSE) +
-    scale_x_reverse() +
-    scale_y_continuous(labels = scales::comma) +
-    theme_minimal() +
-    theme(
-      legend.position = "none",
-      axis.ticks.y = element_blank(),
-      axis.text.y = element_blank(),
-      axis.title.y = element_blank(),
-      plot.margin = margin(1, 4, 1, 3, "cm")
-    ) +
-    labs(title = 'Top {top_n} expéditeurs de mails', 
-         subtitle = 'Date: {frame_time}',
-         x = "", y = "Nombre de mails") +
-    transition_time(date) +
-    ease_aes('linear')
-
-  # Animer et sauvegarder
-  animated_plot <- animate(p, nframes = 100, fps = 5, width = 800, height = 600, renderer = gifski_renderer())
-  anim_save("output/top_senders_animated.gif", animated_plot)
-}
-
-# Appeler la fonction pour créer l'animation
 create_top_senders_animation(message_table, top_n = 15, months_back = 6)
+
+# n mail dans heure x semaine
+heatmap_plot <- create_heatmap(message_table %>% filter(from_dom))
+ggsave("output/heatmap_mails_jour_heure.png", heatmap_plot, width = 12, height = 8)
+
+### pour le champ des mails, il s'agit des mails que j'ai reçu
+## certains viennnet de métropole 
+
+# Create histogram of previous messages
+previous_messages_count <- message_table %>%
+  filter(indicatrice_previous_message) %>%
+  mutate(prev_msg_count = sapply(previous_messages, nrow)) %>%
+  pull(prev_msg_count)
+
+histogram_plot <- ggplot(data.frame(count = previous_messages_count), aes(x = count)) +
+  geom_histogram(binwidth = 1, fill = "skyblue", color = "black") +
+  labs(title = "Distribution of Previous Messages Count",
+       x = "Number of Previous Messages",
+       y = "Frequency") +
+  theme_minimal()
+
+ggsave("output/previous_messages_histogram.png", histogram_plot, width = 10, height = 6)
+
+# Filter out recipients with count of 1 and create histogram
+table(message_table$nb_recipients)
+message_table%>% filter(nb_recipients==0)%>% head(2)
+
+### TO DO :
+- regardermieux ls données sources oour voir si on put pas avoir la timezone quelque part dol etc...
+- gérer dans les données sources le multimail pour récupérer l'information avec l'idée du mail enfant / parent  -> idée de cascade
+- faire le graphe des destinataires
+- créer un semainier par utilisateurs représentatif plus de X mail et faire un algo EM lena carell  classification -> semainier moyen (air bnb)
+- créer une ACP parutilisateurs en créant des indicateurs type :
+  - nb mots moyen
+  - nb mots uniques utilisés
+  - longueur mail moyenne
+  - nb_mail_apres Xh 
+  - nb_mail apres Xh
+  - nb destinataires moyen
+  - nb _connexions (destinataires global)
+- gérer les champs : mails globauux, mails reçus de la métropole, mails reçus que des DOMS, hors boite fonctionnelle
+- faire de lanalyse de sentiment
+- restructurer avec chat GPT
+- appli WEB
+- dashboard 
+- appeler Jeremyu pour éventuelle collaboration -> une ofis première version bien propre, tout type de client mail etc.., API outlook, proposer ça à des boites
