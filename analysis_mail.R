@@ -2,31 +2,24 @@ Sys.setenv(no_proxy = "")
 Sys.setenv(https_proxy ="http://proxy-rie.http.insee.fr:8080")
 Sys.setenv(http_proxy ="http://proxy-rie.http.insee.fr:8080")
 
-source("fonctions.R")
-packages <- c("jsonlite", "dplyr", "lubridate", "stringr", "tidyr", "ggplot2", "ggiraph")
-
-sapply(packages, require, character.only = TRUE)
-
 rm(list=ls())
 
-source("fonctions.R")
-# Lire le fichier JSON
-data <- fromJSON("messages.json")
-message_table <- data$messages
+packages <- c("jsonlite", "dplyr", "lubridate", "stringr", "tidyr", "ggplot2", "ggiraph","gganimate")
+sapply(packages, require, character.only = TRUE)
 
-#message_table|>View()
+source("codes/fonctions.R")
+
+# Lire le fichier JSON
+data <- fromJSON("input/messages.json")
+message_table <- data$messages
 
 indicatrice_previous_message <- sapply(message_table$previous_messages,function(message){
     return((message|> nrow() )>0 )
 } )
-
 message_table$date <- sapply(message_table$date,parse_custom_date)
 
-
-# Assuming message_table$date has already been processed with parse_custom_date
 message_table <- message_table %>%
   separate(date, into = c("annee", "mois", "jour", "heure", "minute", "seconde"), sep = "-", remove = FALSE)
-
 
 # Extraire prénom et nom
 message_table <- message_table %>%
@@ -36,48 +29,79 @@ message_table <- message_table %>%
     full_name = str_to_title(full_name)
   )
 
-# Compter le nombre de mails par expéditeur, en excluant les NA
-mail_counts <- message_table %>%
-  filter(!is.na(full_name) & full_name != "") %>%
-  count(full_name, sort = TRUE) %>%
-  top_n(20, n)
-
-# Créer le ggplot avec ggiraph
-p <- ggplot(mail_counts, aes(x = reorder(full_name, n), y = n)) +
-  geom_col_interactive(aes(tooltip = sprintf("%s: %d mails", full_name, n), data_id = full_name), fill = "skyblue") +
-  coord_flip() +
-  labs(
-    title = "Nombre de mails envoyés par les 20 expéditeurs les plus actifs",
-    x = "Expéditeur",
-    y = "Nombre de mails"
-  ) +
-  theme_minimal() +
-  theme(axis.text.y = element_text(size = 8))
-
-# Convertir en graphique interactif
-interactive_plot <- girafe(ggobj = p, width_svg = 10, height_svg = 8)
-
-# Personnaliser l'apparence au survol
-interactive_plot <- girafe_options(interactive_plot,
-  opts_hover(css = "fill:orange;"),
-  opts_tooltip(css = "background-color:white;color:black;padding:5px;border-radius:3px;")
-)
-
-# Afficher le graphique interactif
-interactive_plot
-
+interactive_plot <- create_nb_mail_plot(message_table,5,20)
 # Sauvegarder le graphique interactif en HTML
-htmlwidgets::saveWidget(interactive_plot, "top_20_senders_interactive.html")
+htmlwidgets::saveWidget(interactive_plot, "output/top_senders_interactive.html",selfcontained=FALSE)
 
+## heure repartition
+# Assurez-vous que la colonne 'heure' est de type numérique
+message_table$heure <- as.numeric(message_table$heure)
 
-# - dico structuré, save en §JSON pour lecture sur R après
-# - nombre de mail par jour
-# - tableau de bord des heures du nombre envois de mail par personne
-# - graph entre les individus qui répondent etc..et se renvoit
-# - nombre de mots par mail, nombre de mots uniques utilisés etc..
-# - liens pondérés par nb mails envoyés, couleurs des noeuds dépendant de la div
-# - faire des records
-# - mail le plus long
- #C:/Users/RK09OA/AppData/Local/Programs/Python/Python312/python.exe , pour lancer python sur terminal
-# retravailler sur la structure des mails
+# Créer un dataframe résumé pour l'histogramme
+mail_count <- message_table %>%
+  count(heure)
+# compte par personne 
+interactive_plot <- create_plot(message_table,6)
+saveWidget(interactive_plot, "repartition_mails_par_heure_interactif.html")
 
+# créer heure par heure avec le decoupage que j'avais fait déja bar plot ggiraph aussi 6 derniers mois fonction
+
+hourly_plot <- create_hourly_plot_last_6_months(message_table,12)
+
+# ... existing code ...
+
+# Créer l'animation des top expéditeurs
+create_top_senders_animation <- function(data, top_n = 15, months_back = 6) {
+  #data <-message_table
+  # Assurez-vous que la colonne 'date' est au format Date
+  data$date <- as.Date(data$date)
+  
+  # Filtrer les données pour les derniers mois
+  end_date <- max(data$date,na.rm = TRUE)
+  start_date <- end_date - months(months_back)
+  filtered_data <- data %>% 
+    filter(date >= start_date)
+  
+  # Préparer les données pour l'animation
+  animation_data <- filtered_data %>%
+    count(full_name, annee, mois) %>%
+    arrange(full_name, annee, mois) %>%
+    group_by(full_name) %>%
+    mutate(
+      cumulative_n = cumsum(n),
+      date = as.Date(paste(annee, sprintf("%02d", as.numeric(mois)), "01", sep = "-"))
+    ) %>%
+    group_by(annee, mois) %>%
+    mutate(ranking = row_number(-cumulative_n)) %>%
+    filter(ranking <= top_n) %>%
+    ungroup()
+
+  # Créer l'animation
+  p <- ggplot(animation_data, aes(x = ranking, y = cumulative_n, group = full_name, fill = full_name)) +
+    geom_col() +
+    geom_text(aes(label = full_name), hjust = 1.1, color = "white") +
+    #geom_text(aes(label = cumulative_n), hjust = -0.1) +
+    coord_flip(clip = "off", expand = FALSE) +
+    scale_x_reverse() +
+    scale_y_continuous(labels = scales::comma) +
+    theme_minimal() +
+    theme(
+      legend.position = "none",
+      axis.ticks.y = element_blank(),
+      axis.text.y = element_blank(),
+      axis.title.y = element_blank(),
+      plot.margin = margin(1, 4, 1, 3, "cm")
+    ) +
+    labs(title = 'Top {top_n} expéditeurs de mails', 
+         subtitle = 'Date: {frame_time}',
+         x = "", y = "Nombre de mails") +
+    transition_time(date) +
+    ease_aes('linear')
+
+  # Animer et sauvegarder
+  animated_plot <- animate(p, nframes = 100, fps = 5, width = 800, height = 600, renderer = gifski_renderer())
+  anim_save("output/top_senders_animated.gif", animated_plot)
+}
+
+# Appeler la fonction pour créer l'animation
+create_top_senders_animation(message_table, top_n = 15, months_back = 6)
