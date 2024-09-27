@@ -15,13 +15,8 @@ heatmap_plot <- create_heatmap(message_table %>% filter(from_dom))
 ggsave("output/heatmap_mails_jour_heure.png", heatmap_plot, width = 12, height = 8)
 
 ### pour le champ des mails, il s'agit des mails que j'ai reçu
-## certains viennnet de métropole 
+## certains viennnent de métropole 
 
-# Create histogram of previous messages
-previous_messages_count <- message_table %>%
-  filter(indicatrice_previous_message) %>%
-  mutate(prev_msg_count = sapply(previous_messages, nrow)) %>%
-  pull(prev_msg_count)
 
 histogram_plot <- ggplot(data.frame(count = previous_messages_count), aes(x = count)) +
   geom_histogram(binwidth = 1, fill = "skyblue", color = "black") +
@@ -36,7 +31,67 @@ ggsave("output/previous_messages_histogram.png", histogram_plot, width = 10, hei
 table(message_table$nb_recipients)
 message_table%>% filter(nb_recipients==0)%>% head(2)
 
+# nb unique sender
+unique(message_table$sender)%>%length()
+
+# mail en provenance d'un vrai mail
+message_table%>%filter(sender_type == "personne")%>%nrow()
+
+# mail directement à moi en provenance de quequ'un
+message_table%>%filter(sender_type == "personne" & nb_recipients ==1 )%>%nrow()
+
+interactive_plot <- create_nb_mail_plot(
+  message_table%>%filter(sender_type == "personne" ),12,20)
+
+interactive_plot <- create_nb_mail_plot(
+  message_table%>%filter(sender_type == "personne" & nb_recipients ==1 ),12,20)
+
+# Décomosition des mails envoyés par opersone, à moi seul ou à plusieurs
+# Prepare data for the stacked bar histogram
+sender_summary <- message_table %>%
+  filter(sender_type == "personne") %>%
+  group_by(full_name) %>%
+  summarise(
+    multiple_recipients = sum(nb_recipients > 1),
+    single_recipient = sum(nb_recipients == 1),
+    total = n()
+  ) %>%
+  arrange(desc(total)) %>%
+  head(20)  # Limit to top 20 senders
+
+# Create the stacked bar histogram using ggplot2 and ggiraph
+stacked_bar_plot <- ggplot(sender_summary, aes(y = reorder(full_name, total))) +
+  geom_bar_interactive(
+    aes(x = multiple_recipients, fill = "Multiple Recipients",
+        tooltip = sprintf("Sender: %s\nMultiple Recipients: %d", full_name, multiple_recipients)),
+    stat = "identity"
+  ) +
+  geom_bar_interactive(
+    aes(x = single_recipient, fill = "Single Recipient",
+        tooltip = sprintf("Sender: %s\nSingle Recipient: %d", full_name, single_recipient)),
+    stat = "identity"
+  ) +
+  scale_fill_manual(values = c("Multiple Recipients" = "darkblue", "Single Recipient" = "lightblue")) +
+  labs(title = "Number of Emails Received by Sender",
+       y = "Sender",
+       x = "Number of Emails",
+       fill = "Recipient Type") +
+  theme_minimal() +
+  theme(axis.text.y = element_text(hjust = 1))
+
+# Convert to an interactive plot
+interactive_stacked_bar <- girafe(ggobj = stacked_bar_plot)
+
+# Save the interactive plot
+htmlwidgets::saveWidget(interactive_stacked_bar, "output/stacked_bar_senders_interactive.html", selfcontained = TRUE)
+
+# save dans giff etc..
+create_top_senders_animation(message_table%>% filter(sender_type == "personne"))
+
+(message_table%>%filter(nb_recipients>1)%>%pull(recipients))[1]
+
 ### TO DO :
+- Réaffiner un peu la fonction graph, pondérer liens etc.., sélection de mail possible si on veut un graph récis
 - regardermieux ls données sources oour voir si on put pas avoir la timezone quelque part dol etc...
 - gérer dans les données sources le multimail pour récupérer l'information avec l'idée du mail enfant / parent  -> idée de cascade
 - faire le graphe des destinataires
