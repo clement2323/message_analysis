@@ -1,0 +1,74 @@
+
+
+check_ollama <- function() {
+  tryCatch(
+    {
+      old_http_proxy <- Sys.getenv("http_proxy")
+      old_https_proxy <- Sys.getenv("https_proxy")
+      Sys.unsetenv("http_proxy")
+      Sys.unsetenv("https_proxy")
+      
+      # Attempt to connect to Ollama
+      result <- httr::GET("http://localhost:11434/api/tags")
+      
+      # Restore proxy settings
+      Sys.setenv(http_proxy = old_http_proxy)
+      Sys.setenv(https_proxy = old_https_proxy)
+      
+      return(httr::status_code(result) == 200)
+    },
+    error = function(e) {
+      return(FALSE)
+    }
+  )
+}
+
+if (!check_ollama())  stop("Ollama is not running. Please start Ollama before proceeding.\n")
+
+# 1) créer un file odelfile.txt dans le quel
+
+FROM C:/Users/RK09OA/Downloads/tinyllama-1.1b-chat-v1.0.Q3_K_S.gguf
+
+PARAMETER temperature 1
+# sets the context window size to 4096, this controls how many tokens the LLM can use as context to generate the next token
+PARAMETER num_ctx 4096
+# sets a custom system message to specify the behavior of the chat assistant
+SYSTEM You are Mario from super mario bros, acting as an assistant.
+
+# après ça 
+ollama create tiny-llama -f './modelfile.txt'
+ollama run tiny-llama
+
+# le from peut apeler un odel preexistant mais aussi ! un model au format .gguf sur lequel ollama s'appuie
+
+library(ollamar)
+Sys.setenv(no_proxy = "localhost,127.0.0.1") # ollama run sur le 11434..
+Sys.unsetenv("http_proxy") # remttre les proxy insee pour installation de package seulement
+Sys.unsetenv("https_proxy")
+test_connection()  # test connection to Ollama server
+# bon pour installer les packages mais mauvais pour bosser en local
+
+# le pull marche pas à cause des proxy mais avec le create sur un gguf pers c'est cool
+resp <- generate("mistral-small", "tell me a 5-word story") 
+resp
+# generate a response/text based on a prompt; returns an httr2 response by default
+resp <- generate("mistrall-small", "tell me a 5-word story") 
+resp
+
+# Fonction R pour pull un modèle Ollama via le proxy INSEE
+pull_ollama_model <- function(model_name) {
+  proxy_command <- '
+  $env:HTTP_PROXY = "http://proxy-rie.http.insee.fr:8080"
+  $env:HTTPS_PROXY = "http://proxy-rie.http.insee.fr:8080"
+  $env:NO_PROXY = "localhost,127.0.0.1"
+  ollama pull {model_name}
+  '
+  proxy_command <- gsub("{model_name}", model_name, proxy_command)
+  system2("powershell", args = c("-Command", proxy_command))
+}
+
+# Utilisation
+# Fonction R pour pull un modèle Ollama via le proxy INSEE
+
+
+pull_ollama_model("mistral-small")
