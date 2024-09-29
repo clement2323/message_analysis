@@ -13,13 +13,10 @@ extract_timezone <- function(date_string) {
   return(ifelse(is.na(tz), "Unknown", tz))
 }
 
-# Extraire prénom, nom et détecter l'origine du mail
+
+# Appliquer la fonction pour extraire prénom et nom
 message_table <- message_table %>%
-  mutate(
-    full_name = str_extract(sender, "^[^@]+"),
-    full_name = str_replace_all(full_name, "\\.", " "),
-    full_name = str_to_title(full_name)
-  )
+  mutate(full_name = sapply(sender, extract_full_name))
 
 message_table$date <- sapply(message_table$date,parse_custom_date)
 
@@ -33,10 +30,6 @@ message_table <- message_table %>%
 # Create histogram of previous messages
 message_table <- message_table %>%
   mutate(prev_msg_count = sapply(previous_messages, nrow)) 
-
-# Ajouter la nouvelle colonne
-message_table <- message_table %>%
-  mutate(sender_type = ifelse(is_functional_mailbox(sender), "boite_fonctionnelle", "personne"))
 
 
 # Vecteur d'emails qui ne semblent pas être des noms et prénoms
@@ -110,14 +103,13 @@ non_personne_emails <- c(
   "sheryl.davis@netcloudtechnology.com", "info@bigdataparis.com", 
   "dg75-dsds-animation-des-dem-et-sites-prix@insee.fr", "DR34-PCTOURISME@insee.fr", 
   "dr59-sndi-cpie@insee.fr", "dg75-dsds-rem@insee.fr", "dsi-messagerie@insee.fr", 
-  "dsi-plateformes-datascience@insee.fr", "dsds-dg@insee.fr"
+  "dsi-plateformes-datascience@insee.fr", "dsds-dg@insee.fr", "SR971-AGENTS@insee.fr","DI971-AGENTS-EDIR@insee.fr","sr971-enqueteurs@insee.fr"
 )
 
 # Créer la nouvelle variable
 message_table <- message_table %>%
   mutate(sender_type = ifelse(sender %in% non_personne_emails, "non_personne", "personne"))
 
-# ... rest of the code ...
 
 # Filtrer les messages (si nécessaire)
 message_table <- message_table %>% 

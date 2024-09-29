@@ -4,5 +4,8 @@ Sys.setenv(http_proxy ="http://proxy-rie.http.insee.fr:8080")
 
 rm(list=ls())
 
-packages <- c("jsonlite", "dplyr", "lubridate", "stringr", "tidyr", "ggplot2", "ggiraph","gganimate")
+packages <- c("jsonlite", "dplyr", "lubridate", 
+"stringr", "tidyr", "ggplot2", "ggiraph","gganimate",
+ "visNetwork","tidytext","wordcloud","RColorBrewer")
 sapply(packages, require, character.only = TRUE)
+

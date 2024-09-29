@@ -281,3 +281,12 @@ create_heatmap <- function(data, subtitle = NULL) {
     theme(axis.text.x = element_text(angle = 45, hjust = 1),
           plot.title = element_text(hjust = 0.5))  # Centre le titre
 }
+
+
+# Fonction pour extraire et formater le nom complet
+extract_full_name <- function(sender) {
+  full_name <- str_extract(sender, "^[^@]+")
+  full_name <- str_replace_all(full_name, "\\.", " ")
+  full_name <- str_to_title(full_name)
+  return(full_name)
+}
