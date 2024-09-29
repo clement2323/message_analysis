@@ -290,3 +290,27 @@ extract_full_name <- function(sender) {
   full_name <- str_to_title(full_name)
   return(full_name)
 }
+
+
+creer_nuage_mots <- function(tidy_bodies_clean,mail_sender = "all"){
+
+tidy_personne <- 
+if(mail_sender !="all") tidy_bodies_clean%>% filter(sender==mail_sender) else tidy_bodies_clean
+
+word_counts <- tidy_personne %>%
+    count(word, sort = TRUE)
+
+wordcloud_graph <- wordcloud(words = word_counts$word, 
+          freq = word_counts$n, 
+          min.freq = 2,
+          max.words = 100, 
+          random.order = FALSE, 
+          rot.per = 0.35, 
+          colors = brewer.pal(8, "Dark2"))
+
+# Sauvegarder le wordcloud dans un fichier
+png(paste0("wordcloud_",mail_sender,".png"), width = 800, height = 600)
+wordcloud_graph
+dev.off()
+
+}

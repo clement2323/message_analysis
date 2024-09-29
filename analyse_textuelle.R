@@ -30,72 +30,46 @@ bruit <- c("sr971","dr69","tr","to","https", "objet", "clément", "a", "jean", "
                    ,"envoyé","bonjour","cordialement","bonne","journée","the","entre","joint","deux"
             )
 jour_semaine <-c("lundi","mardi","mercredi","jeudi","vendredi","samedi","dimanche")
-prenoms <- c("patrick","baptiste","philippe","marie","xavier","benhaddouche","bertrand","sébastien",
-"louis","emmanuel","marie","françois","herbet","sophie","ali","isabelle","dussud","michel","herbet","christine","pierre","of", "frédéric","où","ça","durand"
-"annaïck","francois","claire","clovis","guylaine","camille","yves","ménard","favreau","dorelon","aumand","rouvière")
+prenoms <- c("patrick","baptiste","philippe","marie","xavier",
+"benhaddouche","bertrand","sébastien","louis","emmanuel","marie","françois",
+"herbet","sophie","ali","isabelle","dussud","michel","herbet","christine","pierre",
+"of", "frédéric","où","ça","durand","annaïck","francois","claire","clovis","guylaine","camille",
+"yves","ménard","favreau","dorelon","aumand","rouvière","annick","durand","clarenc","chantal","jonny","yengadessin")
+
+
+
 mois <- c("janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre")
-stopwords_sup <- c(bruit,jour_semaine,mois,prenoms)
+mots_courants <- c("caix","direction","régionale","guyane","guadeloupe","martinique","maim","cécile","sous","après","cliquer","vers","être")
 
-# Fonction optimisée pour ajouter des stopwords basés sur un pattern regex
-add_regex_stopwords <- function(current_stopwords, pattern, data, description) {
-  new_stopwords <- unique(data$word[grepl(pattern, data$word)])
-  message(paste("Ajout de", length(new_stopwords), "stopwords pour:", description))
-  return(c(current_stopwords, new_stopwords))
-}
+sender_names <- lapply(message_table$full_name, extract_name)
+sender_prenoms <- sapply(sender_names, function(x) x$prenom)%>% tolower()
+sender_noms <- sapply(sender_names, function(x) x$nom)%>% tolower()
 
-pattern_avec_chiffres <- "\\d"
-stopwords_sup <- add_regex_stopwords(stopwords_sup, pattern_avec_chiffres, tidy_bodies, "chaînes contenant des chiffres")
+stopwords_sup <- c(bruit,jour_semaine,mois,prenoms,mots_courants,sender_noms,sender_prenoms)
 
-# Regex pour les mots avec un point au milieu
-pattern_avec_point <- "^[a-z]+\\.[a-z]+$"
-stopwords_sup <- add_regex_stopwords(stopwords_sup, pattern_avec_point, tidy_bodies, "mots avec un point")
+# Combinaison de tous les patterns en un seul
+pattern_combine <- paste0(
+  "\\d|",                  # Chaînes contenant des chiffres
+  "^[a-z]+\\.[a-z]+$|",    # Mots avec un point au milieu
+  "^mailto:.+$|",          # Adresses mailto
+  "\\.fr$|",               # Domaines se terminant par .fr
+  "\\.com"                 # Chaînes contenant .com
+)
 
-# mailto
-pattern_mailto <- "^mailto:.+$"
-stopwords_sup <- add_regex_stopwords(stopwords_sup, pattern_mailto, tidy_bodies, "adresses mailto")
-
-# .fr..
-pattern_fr_domains <- "\\.fr$"
-stopwords_sup <- add_regex_stopwords(stopwords_sup, pattern_fr_domains, tidy_bodies, "domaines se terminant par .fr")
-
-pattern_com <- "\\.com"
-stopwords_sup <- add_regex_stopwords(stopwords_sup, pattern_com, tidy_bodies, "chaînes contenant .com")
+stopwords_sup <- add_regex_stopwords(stopwords_sup, pattern_combine, tidy_bodies, "tous les patterns combinés")
 
 # Combinaison de tous les stopwords
 stopwords_df <- bind_rows(stopwords_df, data.frame(word = stopwords_sup))
-
-### mots pour ajuster dépendant des cas
-mots_courants <- c("caix","direction","régionale","guyane","guadeloupe","martinique","maim","cécile","sous","après","cliquer","vers","être")
-stopwords_df <- bind_rows(stopwords_df, 
-data.frame(word = mots_courants))
-
 
 # Affichage des mots les plus fréquents après filtrage
 tidy_bodies_clean <- tidy_bodies %>% 
   anti_join(stopwords_df, by = "word")
 
-# Compter la fréquence des mots
-word_counts <- tidy_bodies_clean %>%
-  count(word, sort = TRUE)
-
-word_counts%>% View()
-# Créer le nuage de mots
-#set.seed(1234) # Pour la reproductibilité
-wordcloud(words = word_counts$word, 
-          freq = word_counts$n, 
-          min.freq = 2,
-          max.words = 100, 
-          random.order = FALSE, 
-          rot.per = 0.35, 
-          colors = brewer.pal(8, "Dark2"))
-
-# Sauvegarder le wordcloud dans un fichier
-png("wordcloud.png", width = 800, height = 600)
-wordcloud(words = word_counts$word, 
-          freq = word_counts$n, 
-          min.freq = 2,
-          max.words = 100, 
-          random.order = FALSE, 
-          rot.per = 0.35, 
-          colors = brewer.pal(8, "Dark2"))
-dev.off()
+# stats desc
+creer_nuage_mots(tidy_bodies_clean)
+creer_nuage_mots(tidy_bodies_clean,"patrick.favreau@insee.fr")
+creer_nuage_mots(tidy_bodies_clean,"louis.malard@insee.fr")
+creer_nuage_mots(tidy_bodies_clean,"annick.durand@insee.fr")
+creer_nuage_mots(tidy_bodies_clean,"philippe.clarenc@insee.fr")
+creer_nuage_mots(tidy_bodies_clean,"philippe.dorelon@insee.fr")
+creer_nuage_mots(tidy_bodies_clean,"bertrand.aumand@insee.fr")

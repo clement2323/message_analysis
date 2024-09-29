@@ -106,13 +106,25 @@ non_personne_emails <- c(
   "dsi-plateformes-datascience@insee.fr", "dsds-dg@insee.fr", "SR971-AGENTS@insee.fr","DI971-AGENTS-EDIR@insee.fr","sr971-enqueteurs@insee.fr"
 )
 
+# fair une colonne de recipients sans boite fonctionnelle
 # Créer la nouvelle variable
 message_table <- message_table %>%
   mutate(sender_type = ifelse(sender %in% non_personne_emails, "non_personne", "personne"))
 
-
 # Filtrer les messages (si nécessaire)
 message_table <- message_table %>% 
   filter(!is.na(date), !is.na(full_name))
+
+
+# Fonction pour extraire le prénom et le nom
+extract_name <- function(full_name) {
+  parts <- strsplit(full_name, " ")[[1]]
+  if (length(parts) >= 2) {
+    return(list(prenom = parts[1], nom = paste(parts[-1], collapse = " ")))
+  } else {
+    return(list(prenom = full_name, nom = NA))
+  }
+}
+
 
 

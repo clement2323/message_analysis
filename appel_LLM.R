@@ -1,4 +1,3 @@
-
 library(ollamar)
 Sys.setenv(no_proxy = "localhost,127.0.0.1") # ollama run sur le 11434..
 Sys.unsetenv("http_proxy") # remttre les proxy insee pour installation de package seulement
@@ -18,23 +17,20 @@ rep_df <- generate("tiny-llama", "donne moi un compliment", output = "df")
 rep_df$response
 message_table%>% select(date) %>% head()
 
+messages_septembre <- message_table %>%
+  filter(date >= as.Date("2024-09-15") & date <= as.Date("2024-09-20")) 
 
+message <- messages_septembre$body[8]
 
-
-# Fonction R pour pull un modèle Ollama via le proxy INSEE
-pull_ollama_model <- function(model_name) {
-  proxy_command <- '
-  $env:HTTP_PROXY = "http://proxy-rie.http.insee.fr:8080"
-  $env:HTTPS_PROXY = "http://proxy-rie.http.insee.fr:8080"
-  $env:NO_PROXY = "localhost,127.0.0.1"
-  ollama pull {model_name}
-  '
-  proxy_command <- gsub("{model_name}", model_name, proxy_command)
-  system2("powershell", args = c("-Command", proxy_command))
+resumer_message_llm <- function(message, nom_model ="tiny-llama-sum") {
+  prompt <- paste0("resume moi ce message : ", message)
+  rep_df <- generate(nom_model, prompt, output = "df")
+  return(rep_df$response[1])
 }
 
-# Utilisation
-# Fonction R pour pull un modèle Ollama via le proxy INSEE
+out <- lapply(messages_septembre$body[20:40],resumer_message_llm)
 
-
-pull_ollama_model("mistral-small")
+messages_septembre$body[49]
+# Example usage:
+resume <- resumer_message_llm("coucou c'est moi")
+print(resume)

@@ -107,6 +107,7 @@ create_top_senders_animation(message_table%>% filter(sender_type == "personne"))
 - gérer les champs : mails globauux, mails reçus de la métropole, mails reçus que des DOMS, hors boite fonctionnelle
 - faire de lanalyse de sentiment
 - restructurer avec chat GPT
+-embeddings personnes et tsne
 
 library(ollamar)etllamaen self
 embeddings word to vec, words cloud avec sentiment analysis,
@@ -121,3 +122,7 @@ tidy text
 - appeler Jeremyu pour éventuelle collaboration -> une ofis première version bien propre, tout type de client mail etc.., API outlook, proposer ça à des boites
 - analyse depctage de haterspar personne
 - un nuage de mots par ersonne (pour les plus gros expediteurs)
+- neo4j base graphe, faire untruc plus en mode base de données 3FN au leiu de tout trimballer
+- nb messages reçu par jour mois etc.. cumulatif avec date de début
+- regarder le nb de messages par mois aussi ça notera les vaces etc.. et le faire par semaine pour un agent pour connaitre ses vacances
+- commencer à conaténer tout ça
