@@ -12,6 +12,15 @@ installer_package <- function(pkg) {
   }
 }
 
+
+
+nettoyer_html <- function(texte) {
+  texte_nettoye <- gsub("<.*?>", "", texte)
+  texte_nettoye <- gsub("\\s+", " ", texte_nettoye)
+  texte_nettoye <- trimws(texte_nettoye)
+  return(texte_nettoye)
+}
+
 #' Parse custom date format and adjust for Martinique timezone
 #'
 #' This function parses a custom date string and adjusts it to the Martinique timezone (UTC-4).

@@ -66,7 +66,7 @@ nettoyer_corps_message <- function(message_content) {
 # Exemple d'utilisation
 date_debut <- as.Date("2024-09-22")
 date_fin <- as.Date("2024-09-23")
-prompt_general <- "Peux-tu me synthétiser les éléments importants de ce mail ou échange de mail selon les cas ? Sers-toi du sujet aussi. N'hésite pas à me dire si je dois répondre de suite ou non, ou si c'est juste informatif pour moi."
+prompt_general <- "Peux-tu me synthétiser les éléments importants de ce mail ou échange de mail selon les cas ? Sers-toi du sujet aussi. N'hésite pas à me dire si je dois répondre de suite ou non, ou si c'est juste informatif pour moi, soit vraiment très télégraphiques dans ta réponse,"
 resultats <- traiter_messages(date_debut, date_fin, prompt_general)
 
 resultats_df <- data.frame(
@@ -89,39 +89,37 @@ save_kable(html_table, file = "resultats_tableau.html")
 
 liste_paquets <- split(resultats_df$Résumé,seq_along(resultats_df$Résumé)%%6)
 
-prompt_synthese <- "fais une synthese à partir de la synthèse générale précédente et 
-des paquets de mails que je t'ajoute
-si c'est une newletter ou quelque chose de très secondaire, 
-(accès siamois garantis, histoire de pointages, bôite pleine, ne l'integre pas à la synthèse)
-"
+prompt_synthese <- "fais une synthese 
+de toutes ces synthèses"
+resume <- nettoyer_html(paste0(resultats_df$Résumé,collapse=","))  # Nettoyage du HTML
+prompt <- paste0(prompt_synthese,resume)
+reponse <- ask_ollama(prompt, model_name = "mistral-small")   
 
-synthese_prec <-""
-
-print(paste0("n paquets = ",length(liste_paquets)))
-compteur = 1
-
-nettoyer_html <- function(texte) {
-  texte_nettoye <- gsub("<.*?>", "", texte)
-  texte_nettoye <- gsub("\\s+", " ", texte_nettoye)
-  texte_nettoye <- trimws(texte_nettoye)
-  return(texte_nettoye)
-}
-
-# Modifier la boucle for pour nettoyer le HTML
-for(paquet in liste_paquets){
-    print(paste0("paquet numero : ", compteur))
-    paquet <- paste0(paquet, collapse="")
-    paquet_nettoye <- nettoyer_html(paquet)  # Nettoyage du HTML
-    prompt <- paste0(prompt_synthese, "Synhese Précédente :", synthese_prec, "paquet mails :", paquet_nettoye)
-    reponse <- ask_ollama(prompt, model_name = "mistral-small")   
-    synthese_prec <- reponse
-    compteur = compteur + 1
-}
-
-res_final_df <- data.frame(synthese = markdownToHTML(text = synthese_prec, fragment.only = TRUE))%>%
+res_final_df <- data.frame(synthese = markdownToHTML(text = reponse, fragment.only = TRUE))%>%
     knitr::kable(escape = FALSE) %>%
     kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
 
-res_final_df
 
-save_kable(res_final_df, file = "synthese_de_synthese.html")
+#synthese_prec <-""
+
+#print(paste0("n paquets = ",length(liste_paquets)))
+#compteur = 1
+
+# Modifier la boucle for pour nettoyer le HTML
+#for(paquet in liste_paquets){
+#    print(paste0("paquet numero : ", compteur))
+#    paquet <- paste0(paquet, collapse="")
+#    paquet_nettoye <- nettoyer_html(paquet)  # Nettoyage du HTML
+#    prompt <- paste0(prompt_synthese, "Synhese Précédente :", synthese_prec, "paquet mails :", paquet_nettoye)
+#    reponse <- ask_ollama(prompt, model_name = "mistral-small")   
+#    synthese_prec <- reponse
+#    compteur = compteur + 1
+#}
+
+#res_final_df <- data.frame(synthese = markdownToHTML(text = synthese_prec, fragment.only = TRUE))%>%
+#    knitr::kable(escape = FALSE) %>%
+#    kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+
+#res_final_df
+
+#save_kable(res_final_df, file = "synthese_de_synthese.html")
