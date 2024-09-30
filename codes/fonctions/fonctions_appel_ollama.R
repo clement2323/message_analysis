@@ -1,8 +1,3 @@
-library(httr)
-library(jsonlite)
-
-# URL de base de l'API Ollama
-base_url <- "https://ollama-clem.lab.sspcloud.fr"
 
 # Fonction pour vérifier si un modèle est disponible
 check_model_availability <- function(model_name) {
@@ -78,14 +73,3 @@ format_response_html <- function(response,model_name) {
 reponse <- ask_ollama("qui ne pete ni rote est voué à explosion. qu'en pense-tu  ?, réponse en rimes",
 model_name = "mistral-small"
 )
-
-# Install and load the htmltools package if not already installed
-library(htmltools)
-
-# Use save_html from htmltools to save the formatted response
-htmltools::save_html(HTML(format_response_html(reponse, "mistral-small")), file = "reponse.html")
-# Exemple d'utilisation :
-# 
-
-reponse <- ask_ollama("qu'est ce qu'un tracteur, réponse en haiku",model_name = "mistral-small")
-# print(reponse)

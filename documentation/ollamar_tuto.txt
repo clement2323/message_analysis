@@ -1,28 +1,5 @@
 
 
-check_ollama <- function() {
-  tryCatch(
-    {
-      old_http_proxy <- Sys.getenv("http_proxy")
-      old_https_proxy <- Sys.getenv("https_proxy")
-      Sys.unsetenv("http_proxy")
-      Sys.unsetenv("https_proxy")
-      
-      # Attempt to connect to Ollama
-      result <- httr::GET("http://localhost:11434/api/tags")
-      
-      # Restore proxy settings
-      Sys.setenv(http_proxy = old_http_proxy)
-      Sys.setenv(https_proxy = old_https_proxy)
-      
-      return(httr::status_code(result) == 200)
-    },
-    error = function(e) {
-      return(FALSE)
-    }
-  )
-}
-
 if (!check_ollama())  stop("Ollama is not running. Please start Ollama before proceeding.\n")
 
 # 1) créer un file odelfile.txt dans le quel
@@ -57,6 +34,3 @@ resp
 # generate a response/text based on a prompt; returns an httr2 response by default
 resp <- generate("mistrall-small", "tell me a 5-word story") 
 
-
-# Utilisation
-# Fonction R pour pull un modèle Ollama via le proxy INSEE
