@@ -74,7 +74,7 @@ resultats_df <- data.frame(
   stringsAsFactors = FALSE
 )
 
-
+#write.csv(resultats_df, file = "resultats_synthese.csv", row.names = FALSE, fileEncoding = "UTF-8")
 # Créer un tableau HTML avec kable et kableExtra
 html_table <- resultats_df %>%
   knitr::kable(escape = FALSE) %>%
@@ -88,33 +88,33 @@ save_kable(html_table, file = "resultats_tableau.html")
 
 
 liste_paquets <- split(resultats_df$Résumé,seq_along(resultats_df$Résumé)%%6)
+
 prompt_synthese <- "fais une synthese à partir de la synthèse générale précédente et 
 des paquets de mails que je t'ajoute
 si c'est une newletter ou quelque chose de très secondaire, 
-(accès siamois garantis, histoire de pointages, ne l'integre pas à la synthèse)
+(accès siamois garantis, histoire de pointages, bôite pleine, ne l'integre pas à la synthèse)
 "
 
 synthese_prec <-""
-print("n paquets : " length(liste_paquets))
+
+print(paste0("n paquets = ",length(liste_paquets)))
 compteur = 1
 for(paquet in liste_paquets){
 
     #paquet <- liste_paquets[[1]]
-    print("paquet numero : ",compteur)
+    print(paste0("paquet numero : ",compteur))
     paquet <- paste0(paquet,collapse="")
-    prompt <- paste0(prompt_synthese, "Synhese Précédente :"," ","paquet mails :" ,paquet)
-    reponse <- ask_ollama(requete_ollama, model_name = "mistral-small")   
+    prompt <- paste0(prompt_synthese, "Synhese Précédente :", synthese_prec,"paquet mails :" ,paquet)
+    reponse <- ask_ollama(prompt, model_name = "mistral-small")   
     synthese_prec <- reponse
     compteur = compteur + 1
 }
 
 
-
-requete_ollama <- paste0(resultats_df$Résumé, collapse = "")
-
-
-
-res_final_df <- data.frame(synthese = markdownToHTML(text = reponse, fragment.only = TRUE))%>%
+res_final_df <- data.frame(synthese = markdownToHTML(text = synthese_prec, fragment.only = TRUE))%>%
     knitr::kable(escape = FALSE) %>%
     kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
 
+res_final_df
+
+save_kable(res_final_df, file = "synthese_de_synthese.html")
