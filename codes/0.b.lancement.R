@@ -99,17 +99,24 @@ synthese_prec <-""
 
 print(paste0("n paquets = ",length(liste_paquets)))
 compteur = 1
-for(paquet in liste_paquets){
 
-    #paquet <- liste_paquets[[1]]
-    print(paste0("paquet numero : ",compteur))
-    paquet <- paste0(paquet,collapse="")
-    prompt <- paste0(prompt_synthese, "Synhese Précédente :", synthese_prec,"paquet mails :" ,paquet)
+nettoyer_html <- function(texte) {
+  texte_nettoye <- gsub("<.*?>", "", texte)
+  texte_nettoye <- gsub("\\s+", " ", texte_nettoye)
+  texte_nettoye <- trimws(texte_nettoye)
+  return(texte_nettoye)
+}
+
+# Modifier la boucle for pour nettoyer le HTML
+for(paquet in liste_paquets){
+    print(paste0("paquet numero : ", compteur))
+    paquet <- paste0(paquet, collapse="")
+    paquet_nettoye <- nettoyer_html(paquet)  # Nettoyage du HTML
+    prompt <- paste0(prompt_synthese, "Synhese Précédente :", synthese_prec, "paquet mails :", paquet_nettoye)
     reponse <- ask_ollama(prompt, model_name = "mistral-small")   
     synthese_prec <- reponse
     compteur = compteur + 1
 }
-
 
 res_final_df <- data.frame(synthese = markdownToHTML(text = synthese_prec, fragment.only = TRUE))%>%
     knitr::kable(escape = FALSE) %>%
