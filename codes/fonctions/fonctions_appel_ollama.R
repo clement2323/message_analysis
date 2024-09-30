@@ -1,6 +1,6 @@
 
 # Fonction pour vérifier si un modèle est disponible
-check_model_availability <- function(model_name) {
+check_model_availability <- function(model_name,base_url = "https://ollama-clem.lab.sspcloud.fr") {
   models_response <- GET(paste0(base_url, "/api/tags"))
   if (status_code(models_response) == 200) {
     models <- content(models_response, "parsed")
@@ -11,7 +11,7 @@ check_model_availability <- function(model_name) {
 }
 
 # Fonction pour pull un modèle
-pull_model <- function(model_name) {
+pull_model <- function(model_name,base_url = "https://ollama-clem.lab.sspcloud.fr") {
   pull_url <- paste0(base_url, "/api/pull")
   payload <- list(name = model_name)
   response <- POST(pull_url, 
@@ -31,9 +31,9 @@ pull_model <- function(model_name) {
 
 ask_ollama <- function(question, model_name = "llama2", base_url = "https://ollama-clem.lab.sspcloud.fr") {
   # Vérifier si le modèle est disponible, sinon le télécharger
-  if (!check_model_availability(model_name)) {
+  if (!check_model_availability(model_name,base_url)) {
     print(paste("Le modèle", model_name, "n'est pas disponible. Tentative de téléchargement..."))
-    if (!pull_model(model_name)) {
+    if (!pull_model(model_name,base_url)) {
       stop("Impossible de télécharger le modèle. Arrêt de la fonction.")
     }
   }
@@ -59,17 +59,3 @@ ask_ollama <- function(question, model_name = "llama2", base_url = "https://olla
   }
 }
 
-format_response_html <- function(response,model_name) {
-  html_template <- '
-  <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-    <h2 style="color: #333;">Réponse (%s)</h2>
-    <p style="background-color: #e6f3ff; padding: 10px; border-radius: 4px; white-space: pre-wrap;">%s</p>
-  </div>
-  '
-  formatted_html <- sprintf(html_template,model_name, response)
-  return(formatted_html)
-}
-
-reponse <- ask_ollama("qui ne pete ni rote est voué à explosion. qu'en pense-tu  ?, réponse en rimes",
-model_name = "mistral-small"
-)
