@@ -100,6 +100,9 @@ res_final_df <- data.frame(synthese = markdownToHTML(text = reponse, fragment.on
     kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
 
 
+plan_action <- ask_ollama("genere un plan d'action en markdown pour conquérir le monde", model_name = "mistral-small")
+plan_action <- ask_ollama("genere un plan d'action en markdown pour conquérir le monde", model_name = "mistral-nemo") 
+
 #synthese_prec <-""
 
 #print(paste0("n paquets = ",length(liste_paquets)))
@@ -123,3 +126,4 @@ res_final_df <- data.frame(synthese = markdownToHTML(text = reponse, fragment.on
 #res_final_df
 
 #save_kable(res_final_df, file = "synthese_de_synthese.html")
+

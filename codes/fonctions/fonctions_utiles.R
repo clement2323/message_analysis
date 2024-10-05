@@ -8,7 +8,7 @@
 #' @export
 installer_package <- function(pkg) {
   if (!requireNamespace(pkg, quietly = TRUE)) {
-    install.packages(pkg, repos = "https://cran.univ-lyon1.fr/")
+    install.packages(pkg)
   }
 }
 
