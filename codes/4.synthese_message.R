@@ -1,5 +1,5 @@
 nettoyer_corps_message <- function(message_content) {   
-   # message_content <- messages_filtres$body[5]
+   # message_content <- messages_filtres$body[14]
   cleaned_body <- message_content %>%
     str_replace_all("\\b(\\+?\\d{1,4}[-.\\s]?)?\\(?\\d{1,4}\\)?[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,9}\\b", "") %>%
     str_replace_all("\\b[\\w\\s]+\\s+<[\\w._%+-]+@[\\w.-]+\\.[A-Za-z]{2,4}(\\s*<mailto:[\\w._%+-]+@[\\w.-]+\\.[A-Za-z]{2,4}>)?\\s*>", "") %>%
@@ -14,8 +14,8 @@ nettoyer_corps_message <- function(message_content) {
   parts <- lapply(parts, str_trim)
   parts <- parts[parts != ""]
   
-  cleaned_body <- Reduce(function(x, y) paste(x, paste(rep("*", 100), collapse=""), y, sep="\n"), parts)
-  
+  cleaned_body <- unlist(parts)
+  cleaned_body <- paste(cleaned_body, collapse = "\n ************** \n")
   return(cleaned_body)
 }
 
@@ -23,12 +23,13 @@ nettoyer_corps_message <- function(message_content) {
 # faire un systeme plus propre de mails parents enfants ppur ne pas se retaper de la redite
 # ou sinon tri par date et pas de duplicatiàon du subject
 prompt_general <- 
-  "Peux-tu me synthétiser les éléments importants de ce mail ou de cet échange
+  "Peux-tu me résumer succinctement les éléments importants de ce mail ou de cet échange
   de mail  ? Soit bref, direct et efficace, juste les infos résumées"
-model_name = "mistral-small"
 
-date_debut <- as.Date("2024-09-19")
-date_fin <- as.Date("2024-09-19")
+model_name <- "mistral-small"
+
+date_debut <- as.Date("2024-07-19")
+date_fin <- as.Date("2024-07-19")
 
 # First, create the corps column
 messages_filtres <- message_table %>%
@@ -39,9 +40,8 @@ messages_filtres <- message_table %>%
     filter(!duplicated(subject_clean))# evite les redondances
 
       # Create corps column from body
-
-messages_filtres$body_clean <- sapply(messages_filtres$body, nettoyer_corps_message)
-
+messages_filtres$body_clean <- sapply(messages_filtres$body, function(body) nettoyer_corps_message(body))
+messages_filtres <- messages_filtres %>% filter(nchar(body_clean)!=0)
 # Modify the pbapply function to use parallel processing
 resultats <- pblapply(1:nrow(messages_filtres), function(i) {
   x <- messages_filtres[i, ]
@@ -63,6 +63,7 @@ resultats_df <- do.call(rbind, lapply(resultats, function(x) {
     stringsAsFactors = FALSE
   )
 }))
+messages_filtres%>%View()
 
 # Modify the creation of the HTML table
 html_table <- resultats_df %>%

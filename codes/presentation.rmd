@@ -1,6 +1,6 @@
 ---
-title: "This is a readthedown Themes YAML from `rmdformats` Package"
-author: "Type your name here"
+title: "Analyse et Synthèse des Communications par Email"
+author: "Votre Nom"
 date: "`r Sys.Date()`"
 output: 
   rmdformats::readthedown
@@ -8,18 +8,44 @@ output:
 
 # Introduction
 
-Le projet initial était de construire un synthétiseur des mails reçus sur une période donnée.
-Synthétiseur basé sur un modèle llm déployé en perso.
-un modèle a été déployé grâce à ollama et est hébergé sur le datalab, en fait on peut déployer plein de modèle car c'est ollama qui est déployé sur le ssplab.
+## Contexte du Projet
+
+Dans le monde professionnel moderne, les emails sont devenus un pilier de la communication. Ils constituent une source riche d'informations sur les interactions, les flux de travail et les dynamiques organisationnelles. Ce projet vise à exploiter cette mine d'or de données pour extraire des insights précieux sur les patterns de communication au sein de notre organisation.
+
+## Objectifs du Projet
+
+L'objectif initial était de construire un synthétiseur des emails reçus sur une période donnée. Cependant, le projet a évolué pour englober une analyse plus large et plus profonde des métadonnées des emails, ainsi que de leur contenu. Nos principaux objectifs sont :
+
+1. Analyser les métadonnées des emails pour identifier les patterns de communication.
+2. Visualiser les réseaux de communication à travers des graphes interactifs.
+3. Effectuer une analyse de sentiment sur le contenu des emails.
+4. Utiliser des techniques d'apprentissage automatique pour catégoriser et résumer les emails.
+
+## Approche Technique
+
+Pour atteindre ces objectifs, nous avons mis en place une infrastructure technique robuste :
+
+1. **Extraction et Préparation des Données** : Nous utilisons R pour extraire et nettoyer les données des emails.
+2. **Analyse des Métadonnées** : Nous avons développé des fonctions personnalisées pour analyser les patterns d'envoi, les fréquences de communication, et les réseaux de destinataires.
+3. **Visualisation** : Nous utilisons des bibliothèques comme ggplot2 et visNetwork pour créer des visualisations interactives et informatives.
+4. **Traitement du Langage Naturel** : Nous avons intégré des modèles de langage (LLM) via Ollama pour l'analyse de sentiment et la synthèse des emails.
+5. **Interface Utilisateur** : Nous prévoyons de développer une application web pour rendre nos analyses accessibles et interactives.
+
+## Structure du Rapport
+
+Ce rapport est structuré comme suit :
+
+1. Méthodologie
+2. Analyse des Métadonnées
+3. Visualisation des Réseaux de Communication
+4. Analyse de Sentiment
+5. Synthèse Automatique des Emails
+6. Conclusions et Perspectives
+
+Dans les sections suivantes, nous allons explorer en détail chacun de ces aspects, en présentant nos résultats et en discutant de leurs implications pour notre compréhension des dynamiques de communication au sein de l'organisation.
 
 ```{r}
 
 ```
 
-
-
-
-## Installation
-
-You can install the `rmdformats` package from GitHub using the following command:
 
