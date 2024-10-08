@@ -78,9 +78,6 @@ nettoyer_sujet <- function(sujet) {
     sujet_modifie <- gsub("=E9", "é", sujet_modifie)
     sujet_modifie <- gsub("C3A9", "é", sujet_modifie)
     sujet_modifie <- gsub("C3A0", "à", sujet_modifie)
-    
-    
-
     # Supprimer les encodages restants et caractères spéciaux
     sujet_propre <- gsub("[?=]", "", sujet_modifie)
     sujet_propre <- gsub("\\r\\n", " ", sujet_propre)

@@ -9,10 +9,14 @@ Sys.unsetenv("https_proxy")
 Sys.unsetenv("http_proxy")
 
 packages <- c("jsonlite", "dplyr", "lubridate", 
-"stringr", "tidyr", "ggplot2", "ggiraph","gganimate",
- "visNetwork","tidytext","wordcloud","RColorBrewer","httr2","httr","kableExtra","pbapply","markdown")
+"stringr","tidyr", "ggplot2", "ggiraph","gganimate",
+ "visNetwork","tidytext","wordcloud","RColorBrewer","httr2",
+ "httr","kableExtra","pbapply","markdown","pbapply",
+ "flexdashboard","rmarkdown")
 
+source("codes/fonctions/fonctions_utiles.R", encoding = "UTF-8")
 sapply(packages,installer_package)
 sapply(packages, require, character.only = TRUE)
 # Load the rollama package and ping Ollama to ensure connectivity.
+
 

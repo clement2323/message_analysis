@@ -1,0 +1,25 @@
+---
+title: "This is a readthedown Themes YAML from `rmdformats` Package"
+author: "Type your name here"
+date: "`r Sys.Date()`"
+output: 
+  rmdformats::readthedown
+---
+
+# Introduction
+
+Le projet initial était de construire un synthétiseur des mails reçus sur une période donnée.
+Synthétiseur basé sur un modèle llm déployé en perso.
+un modèle a été déployé grâce à ollama et est hébergé sur le datalab, en fait on peut déployer plein de modèle car c'est ollama qui est déployé sur le ssplab.
+
+```{r}
+
+```
+
+
+
+
+## Installation
+
+You can install the `rmdformats` package from GitHub using the following command:
+
