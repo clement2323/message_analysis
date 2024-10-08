@@ -1,29 +1,9 @@
-nettoyer_corps_message <- function(message_content) {   
-   # message_content <- messages_filtres$body[14]
-  cleaned_body <- message_content %>%
-    str_replace_all("\\b(\\+?\\d{1,4}[-.\\s]?)?\\(?\\d{1,4}\\)?[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,9}\\b", "") %>%
-    str_replace_all("\\b[\\w\\s]+\\s+<[\\w._%+-]+@[\\w.-]+\\.[A-Za-z]{2,4}(\\s*<mailto:[\\w._%+-]+@[\\w.-]+\\.[A-Za-z]{2,4}>)?\\s*>", "") %>%
-    str_replace_all("\\b[A-Z][a-z]+\\s+[A-Z][a-z]+[-]?;", "") %>%
-    str_replace_all(";\\s*$", "") %>%
-    str_replace_all(";\\s*\n", "\n") %>%
-    str_replace_all("\\s+", " ") %>%
-    str_trim() %>%
-    gsub(pattern = ";", replacement = "")
-  
-  parts <- str_split(cleaned_body, "(?i)\\bDe\\s*:")[[1]]
-  parts <- lapply(parts, str_trim)
-  parts <- parts[parts != ""]
-  
-  cleaned_body <- unlist(parts)
-  cleaned_body <- paste(cleaned_body, collapse = "\n ************** \n")
-  return(cleaned_body)
-}
+
 
 # Exemple d'utilisation
 # faire un systeme plus propre de mails parents enfants ppur ne pas se retaper de la redite
 # ou sinon tri par date et pas de duplicatiàon du subject
-prompt_general <- 
-  "Peux-tu me résumer succinctement les éléments importants de ce mail ou de cet échange
+prompt_general <-  "Peux-tu me résumer succinctement les éléments importants de ce mail ou de cet échange
   de mail  ? Soit bref, direct et efficace, juste les infos résumées"
 
 model_name <- "mistral-small"
@@ -63,7 +43,6 @@ resultats_df <- do.call(rbind, lapply(resultats, function(x) {
     stringsAsFactors = FALSE
   )
 }))
-messages_filtres%>%View()
 
 # Modify the creation of the HTML table
 html_table <- resultats_df %>%
@@ -71,20 +50,5 @@ html_table <- resultats_df %>%
   kable_styling(bootstrap_options = c("striped", "hover", 
                                       "condensed", "responsive"))
 
-
 # Save the HTML output to a file
-writeLines(html_table, "resultats_tableau.html")
-
-# Add the final summary to the HTML output
-html_table <- html_table %>%
-  add_header_above(c("Résumés des messages" = 2)) %>%
-  footnote(general = paste("Synthèse globale:", final_summary))
-
-# Créer un tableau HTML avec kable et kableExtra
-html_table <- resultats_df %>%
-  knitr::kable(escape = FALSE) %>%
-  kable_styling(bootstrap_options = c("striped", "hover", 
-                                      "condensed", "responsive"))
-
-save_kable(html_table, file = "resultats_tableau.html")
-
+writeLines(html_table, "output/resultats_tableau.html")

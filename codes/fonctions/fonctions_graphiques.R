@@ -94,35 +94,6 @@ create_hourly_plot <- function(message_table, months_back, subtitle = NULL) {
   return(interactive_hourly_plot)
 }
 
-# Utilisation de la fonction
-
-
-#' Extract recent emails and save to CSV
-#'
-#' This function extracts emails from the last two weeks and writes their content to a CSV file.
-#'
-#' @param message_table A data frame containing email data.
-#' @param output_file A character string specifying the path and filename for the output CSV file.
-#' @return None
-#' @export
-extract_recent_emails <- function(message_table, output_file) {
-  # Convertir la colonne 'date' en format Date si ce n'est pas déjà fait
-  message_table$date <- as.Date(message_table$date)
-  
-  # Calculer la date d'il y a deux semaines
-  two_weeks_ago <- Sys.Date() - 14
-  
-  # Filtrer les messages des deux dernières semaines
-  recent_messages <- message_table %>%
-    filter(date >= two_weeks_ago) %>%
-    select(date, sender, subject, body)
-  
-  # Écrire les données dans un fichier CSV
-  write.csv(recent_messages, file = output_file, row.names = FALSE, fileEncoding = "UTF-8")
-  
-  cat("Les e-mails récents ont été extraits et enregistrés dans", output_file, "\n")
-}
-
 
 #' Create an animated plot of top email senders
 #'
@@ -133,8 +104,8 @@ extract_recent_emails <- function(message_table, output_file) {
 #' @param months_back An integer specifying how many months back to consider (default is 6).
 #' @return None (saves the animation as a GIF file)
 #' @export
-create_top_senders_animation <- function(data, top_n = 15, months_back = 6) {
-  #data <-message_table
+create_top_senders_animation <- function(data, top_n = 15, months_back = 6, nframes= 400, fps = 10) {
+  #data <-message_table ;top_n = 15;months_back = 6;nframes= 200;fps = 5
   # Assurez-vous que la colonne 'date' est au format Date
   data$date <- as.Date(data$date)
   
@@ -146,17 +117,25 @@ create_top_senders_animation <- function(data, top_n = 15, months_back = 6) {
   
   # Préparer les données pour l'animation
   animation_data <- filtered_data %>%
-    count(full_name, annee, mois) %>%
-    arrange(full_name, annee, mois) %>%
+    count(full_name, annee, mois, jour) %>%
+    arrange(full_name, annee, mois, jour) %>%
     group_by(full_name) %>%
     mutate(
       cumulative_n = cumsum(n),
-      date = as.Date(paste(annee, sprintf("%02d", as.numeric(mois)), "01", sep = "-"))
+      date = as.Date(paste(annee, sprintf("%02d", as.numeric(mois)), sprintf("%02d", as.numeric(jour)), sep = "-"))
     ) %>%
-    group_by(annee, mois) %>%
-    mutate(ranking = row_number(-cumulative_n)) %>%
-    filter(ranking <= top_n) %>%
-    ungroup()
+    # Ajouter les dates manquantes et maintenir cumulative_n
+    complete(date = seq(min(date), max(date), by = "day")) %>%
+    group_by(full_name) %>%
+    fill(cumulative_n) %>%
+    select(-annee, -mois, -jour, -n) %>%
+    ungroup() %>%
+    group_by(date) %>%
+    mutate(ranking = rank(-cumulative_n, ties.method = "first")) %>%
+    filter(ranking <= top_n) %>%  # Filtrer pour garder seulement le top_n à chaque date
+    ungroup() %>%
+    arrange(full_name, date)
+    
 
   # Créer l'animation
   p <- ggplot(animation_data, aes(x = ranking, y = cumulative_n, group = full_name, 
@@ -183,8 +162,9 @@ create_top_senders_animation <- function(data, top_n = 15, months_back = 6) {
     ease_aes('linear')
 
   # Animer et sauvegarder
-  animated_plot <- animate(p, nframes = 400, fps = 10, width = 800, height = 600, renderer = gifski_renderer())
-  anim_save("output/top_senders_animated.gif", animated_plot)
+  animated_plot <- animate(p, nframes = nframes, fps = fps, width = 800, height = 600, renderer = gifski_renderer())
+  
+  animated_plot
 }
 
 #' Create a heatmap of email activity
@@ -226,6 +206,48 @@ create_heatmap <- function(data, subtitle = NULL) {
     theme(axis.text.x = element_text(angle = 45, hjust = 1),
           plot.title = element_text(hjust = 0.5))  # Centre le titre
 }
+
+
+create_hourly_plot_detailed <-function(message_table, top_n = 20){
+# Décomosition des mails envoyés par opersone, à moi seul ou à plusieurs
+# Prepare data for the stacked bar histogram
+sender_summary <- message_table %>%
+  filter(sender_type == "personne") %>%
+  group_by(full_name) %>%
+  summarise(
+    multiple_recipients = sum(nb_recipients > 1),
+    single_recipient = sum(nb_recipients == 1),
+    total = n()
+  ) %>%
+  arrange(desc(total)) %>%
+  head(top_n)  # Limit to top 20 senders
+
+# Create the stacked bar histogram using ggplot2 and ggiraph
+stacked_bar_plot <- ggplot(sender_summary, aes(y = reorder(full_name, total))) +
+  geom_bar_interactive(
+    aes(x = multiple_recipients, fill = "Plusieurs destinataires",
+        tooltip = sprintf("Envoyeur: %s\nPlusieurs destinataires: %d", full_name, multiple_recipients)),
+    stat = "identity"
+  ) +
+  geom_bar_interactive(
+    aes(x = single_recipient, fill = "Seul destinataire",
+        tooltip = sprintf("Envoyeur: %s\nDestinataire: %d", full_name, single_recipient)),
+    stat = "identity"
+  ) +
+  scale_fill_manual(values = c("Plusieurs destinataires" = "darkblue", "Seul destinataire" = "lightblue")) +
+  labs(title = "Nombre d'emails reçus",
+       y = "Envoyeur",
+       x = "Nombre d'emails",
+       fill = "Type de mail") +
+  theme_minimal() +
+  theme(axis.text.y = element_text(hjust = 1))
+
+# Convert to an interactive plot
+  interactive_stacked_bar <- girafe(ggobj = stacked_bar_plot)
+ return(interactive_stacked_bar)
+}
+
+
 
 creer_nuage_mots <- function(tidy_bodies_clean,mail_sender = "all"){
 
