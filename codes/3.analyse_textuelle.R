@@ -37,7 +37,6 @@ prenoms <- c("patrick","baptiste","philippe","marie","xavier",
 "yves","ménard","favreau","dorelon","aumand","rouvière","annick","durand","clarenc","chantal","jonny","yengadessin")
 
 
-
 mois <- c("janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre")
 mots_courants <- c("caix","direction","régionale","guyane","guadeloupe","martinique","maim","cécile","sous","après","cliquer","vers","être")
 
@@ -73,3 +72,6 @@ creer_nuage_mots(tidy_bodies_clean,"annick.durand@insee.fr")
 creer_nuage_mots(tidy_bodies_clean,"philippe.clarenc@insee.fr")
 creer_nuage_mots(tidy_bodies_clean,"philippe.dorelon@insee.fr")
 creer_nuage_mots(tidy_bodies_clean,"bertrand.aumand@insee.fr")
+creer_nuage_mots(tidy_bodies_clean,"luc.rouviere@insee.fr")
+creer_nuage_mots(tidy_bodies_clean,"jean-baptiste.herbet@insee.fr")
+

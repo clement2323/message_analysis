@@ -86,3 +86,42 @@ nettoyer_sujet <- function(sujet) {
 
     return(sujet_propre)
 }
+
+
+add_regex_stopwords <- function(stopwords, pattern, data, description) {
+  # Trouver les mots correspondant au pattern
+  matching_words <- data %>%
+    filter(str_detect(word, pattern)) %>%
+    count(word, sort = TRUE) %>%
+    pull(word)
+  
+  # Ajouter ces mots à la liste des stopwords
+  new_stopwords <- unique(c(stopwords, matching_words))
+  
+  # Afficher le nombre de nouveaux mots ajoutés
+  new_words_count <- length(new_stopwords) - length(stopwords)
+  message(paste("Ajout de", new_words_count, "nouveaux stopwords pour", description))
+  
+  return(new_stopwords)
+}
+
+nettoyer_corps_message <- function(message_content) {   
+   # message_content <- messages_filtres$body[14]
+  cleaned_body <- message_content %>%
+    str_replace_all("\\b(\\+?\\d{1,4}[-.\\s]?)?\\(?\\d{1,4}\\)?[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,9}\\b", "") %>%
+    str_replace_all("\\b[\\w\\s]+\\s+<[\\w._%+-]+@[\\w.-]+\\.[A-Za-z]{2,4}(\\s*<mailto:[\\w._%+-]+@[\\w.-]+\\.[A-Za-z]{2,4}>)?\\s*>", "") %>%
+    str_replace_all("\\b[A-Z][a-z]+\\s+[A-Z][a-z]+[-]?;", "") %>%
+    str_replace_all(";\\s*$", "") %>%
+    str_replace_all(";\\s*\n", "\n") %>%
+    str_replace_all("\\s+", " ") %>%
+    str_trim() %>%
+    gsub(pattern = ";", replacement = "")
+  
+  parts <- str_split(cleaned_body, "(?i)\\bDe\\s*:")[[1]]
+  parts <- lapply(parts, str_trim)
+  parts <- parts[parts != ""]
+  
+  cleaned_body <- unlist(parts)
+  cleaned_body <- paste(cleaned_body, collapse = "\n ************** \n")
+  return(cleaned_body)
+}
