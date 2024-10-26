@@ -1,6 +1,7 @@
 library(ggplot2)
 library(dplyr)
 library(gganimate)
+library(plotly)
 
 # Définir la graine pour la reproductibilité
 set.seed(42)
@@ -139,3 +140,79 @@ anim <- animate(animated_plot, nframes = 100, fps = 10, renderer = gifski_render
 
 # Save the animation as a GIF
 anim_save("animated_plot.gif", animation = anim)
+
+# Fonction pour générer une courbe paramétrique représentant la résultante des vagues
+parametric_wave <- function(t, storm_intensity) {
+  x <- (1 + 0.2 * sin(5*t)) * cos(t)
+  y <- (1 + 0.2 * sin(5*t)) * sin(t)
+  amplitude <- storm_intensity * exp(-2*t/pi) * (1 + 0.5 * sin(10*t))
+  return(data.frame(x = x * amplitude, y = y * amplitude, t = t))
+}
+
+# Générer les données pour la courbe paramétrique
+t <- seq(0, 4*pi, length.out = 1000)
+storm_intensity <- 2
+parametric_data <- parametric_wave(t, storm_intensity)
+
+# Créer le graphique
+p <- ggplot() +
+  # Fond dégradé du bleu au jaune
+  geom_point(data = expand.grid(x = seq(-3, 3, length.out = 100), 
+                                  y = seq(-3, 3, length.out = 100)),
+             aes(x, y, color = sqrt(x^2 + y^2)), alpha = 0.3) +
+  scale_color_gradient(low = "blue", high = "yellow", guide = "none") +
+  
+  # Courbe paramétrique
+  geom_path(data = parametric_data, aes(x, y), color = "white", size = 1)
+
+print(p)
+ggsave("vague_parametrique.png", plot = p, width = 12, height = 8, dpi = 300)
+
+# Fonction pour générer une surface paramétrique représentant les vagues
+parametric_wave_surface <- function(u, v, storm_intensity) {
+  x <- u * cos(v)
+  y <- u * sin(v)
+  z <- storm_intensity * exp(-u) * (sin(5*v) + 0.5*cos(3*u))
+  list(x = x, y = y, z = z)
+}
+
+
+# Générer les données pour la surface paramétrique
+u <- seq(0, 2, length.out = 100)  # Distance radiale
+v <- seq(0, 2*pi, length.out = 100)  # Angle
+storm_intensity <- 2
+
+surface_data <- expand.grid(u = u, v = v)
+wave_surface <- with(surface_data,
+  parametric_wave_surface(u, v, storm_intensity))
+
+# Créer le graphique en 3D
+p <- plot_ly() %>%
+  add_surface(x = ~surface_data$u, y = ~surface_data$v, z = ~wave_surface$z, colorscale = "Viridis", opacity = 0.5)
+
+print(p)
+
+# Générer les données
+set.seed(123)  # Pour la reproductibilité
+data <- expand.grid(x = seq(0, 2*pi, length.out = 200),
+                    curve = 1:4) %>%
+  mutate(y = sin(x + runif(1, 0, 2*pi)) * runif(1, 0.5, 2))
+
+# Créer le graphique
+p <- ggplot(data, aes(x = x, y = y, color = factor(curve))) +
+  geom_line(size = 1) +
+  scale_color_viridis_d(name = "Courbe") +
+  theme_minimal() +
+  labs(title = "Quatuor de Sinusoïdes",
+       subtitle = "Des sinusoïdes qui dansent!",
+       x = "Phase", 
+       y = "Amplitude") +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+        plot.subtitle = element_text(hjust = 0.5, face = "italic", size = 14),
+        legend.position = "bottom")
+
+# Afficher le graphique
+print(p)
+
+# Sauvegarder le graphique (optionnel)
+# ggsave("sinusoides_aleatoires.png", p, width = 10, height = 6, dpi = 300)

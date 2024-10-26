@@ -28,8 +28,8 @@ prompt_general <-
 
 model_name <- "mistral-small"
 
-date_debut <- as.Date("2024-07-19")
-date_fin <- as.Date("2024-07-19")
+date_debut <- as.Date("2024-07-15")
+date_fin <- as.Date("2024-07-18")
 
 # First, create the corps column
 messages_filtres <- message_table %>%
@@ -63,7 +63,6 @@ resultats_df <- do.call(rbind, lapply(resultats, function(x) {
     stringsAsFactors = FALSE
   )
 }))
-messages_filtres%>%View()
 
 # Modify the creation of the HTML table
 html_table <- resultats_df %>%
